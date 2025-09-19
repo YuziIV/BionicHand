@@ -1,0 +1,1 @@
+controller_joint_names: ['', 'tilt_joint', 'palm_joint', 'pinky_joint', 'pinky_mimic_joint', 'ring_joint', 'ring_mimic_joint', 'middle_joint', 'middle_mimic_joint', 'pointer_joint', 'pointer_mimic_joint', 'thumb_swivel_joint', 'thumb_joint', 'thumb_mimic_joint', ]

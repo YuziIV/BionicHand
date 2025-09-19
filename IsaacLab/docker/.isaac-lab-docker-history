@@ -1,0 +1,47 @@
+exit
+clear
+exit 
+clear
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicArm-Direct-v0 --algorithm PPO 
+./../../isaac-sim/runapp.sh 
+exit 
+./../../isaac-sim/runapp.sh 
+2025-09-17T16:57:50Z [8,859ms] [Warning] [omni.isaac.asset_browser] omni.isaac.asset_browser has been deprecated in favor of isaacsim.asset.browser. Please update your code accordingly.
+.
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicArm-Direct-v0 --algorithm PPO 
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO 
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --headless
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_hand/2025-09-17_17-44-36_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --headless
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO 
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --headless
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-17_18-45-06_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./../../isaac-sim/runapp.sh 
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --headless
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-17_19-28-01_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-17_18-45-06_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+exit
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-17_19-28-01_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-17_18-45-06_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./../../isaac-sim/runapp.sh 
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-17_18-45-06_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./../../isaac-sim/runapp.sh 
+ls ./../../isaac-sim/
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --headless
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-18_11-35-23_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./../../isaac-sim/runapp.sh 
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --headless
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-18_12-28-48_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --headless
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_hand/2025-09-17_17-44-36_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-18_13-33-18_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+ss -lntu | egrep '49100|47998'
+ls ./../../isaac-sim/
+./../../isaac-sim/runheadless.sh 
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_8x_hand/2025-09-18_13-33-18_ppo_torch/checkpoints/best_agent.pt --num_envs 9
+exit 
+./../../isaac-sim/runapp.sh 
+./../../isaac-sim/runheadless.sh.sh 
+./../../isaac-sim/runheadless.sh
+./../../isaac-sim/runapp.sh 
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Repose-Cube-OrigBionicHand-Direct-v0 --algorithm PPO --headless
