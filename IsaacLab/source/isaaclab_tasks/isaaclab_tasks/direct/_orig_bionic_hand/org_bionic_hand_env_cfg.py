@@ -137,8 +137,8 @@ class BionicHandEnvCfg(DirectRLEnvCfg):
         dt=1 / 120,
         render_interval=decimation,
         physics_material=RigidBodyMaterialCfg(
-            static_friction=0.65,
-            dynamic_friction=0.5,
+        static_friction=0.35,
+        dynamic_friction=0.25,
         ),
         physx=PhysxCfg(
             bounce_threshold_velocity=0.2,
@@ -300,13 +300,13 @@ class BionicHandEnvCfg(DirectRLEnvCfg):
     dist_reward_scale = -10.0
     rot_reward_scale = 1.0
     rot_eps = 0.1
-    action_penalty_scale = -0.0002
+    action_penalty_scale = -0.001
     reach_goal_bonus = 250
     fall_penalty = 0
     fall_dist = 0.24
     vel_obs_scale = 0.2
-    success_tolerance = 0.1
+    success_tolerance = 0.05
     max_consecutive_success = 0
     av_factor = 0.1
-    act_moving_average = 1.0
+    act_moving_average = 0.3
     force_torque_obs_scale = 10.0
