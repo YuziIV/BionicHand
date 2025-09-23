@@ -18,16 +18,9 @@ import os
 from pxr import Usd, UsdPhysics, PhysxSchema, Gf, Sdf
 import omni.usd
 
-#PLAY WITH THIS
-#./isaaclab.sh -p scripts/reinforcement_learning/skrl/play.py --task Isaac-Repose-Cube-BionicHand-Direct-v0 --num_envs 32 --algorithm PPO --checkpoint /workspace/isaaclab/logs/skrl/bionic_arm/2025-04-13_23-51-58_ppo_torch/checkpoints/best_agent.pt --real-time
-
-
 urdf_path = "/workspace/isaaclab/source/isaaclab_tasks/isaaclab_tasks/direct/bionic_arm/assets/urdf/EZARM_SLDASM/urdf/EZARM_SLDASM.urdf"
 
 #7axis config
-#usd_path = "/workspace/isaaclab/source/isaaclab_tasks/isaaclab_tasks/direct/_bionic_hand/assets/usd/bionic_arm.usd"
-
-#8axis config
 usd_path = "/workspace/isaaclab/source/isaaclab_tasks/isaaclab_tasks/direct/_orig_bionic_hand/assets/usd/EZARM_SLDASM/EZARM_SLDASM.usd"
 
 @configclass
@@ -71,18 +64,7 @@ class EventCfg:
             "distribution": "gaussian",
         },
     )
-    #robot_tendon_properties = EventTerm(
-    #    func=mdp.randomize_fixed_tendon_parameters,
-    #    min_step_count_between_reset=720,
-    #    mode="reset",
-    #    params={
-    #        "asset_cfg": SceneEntityCfg("robot", fixed_tendon_names=".*"),
-    #        "stiffness_distribution_params": (0.75, 1.5),
-    #        "damping_distribution_params": (0.3, 3.0),
-    #        "operation": "scale",
-    #        "distribution": "log_uniform",
-    #    },
-    #)
+
     # -- object
     object_physics_material = EventTerm(
         func=mdp.randomize_rigid_body_material,
@@ -302,10 +284,10 @@ class BionicHandEnvCfg(DirectRLEnvCfg):
     rot_eps = 0.1
     action_penalty_scale = -0.001
     reach_goal_bonus = 250
-    fall_penalty = 0
+    fall_penalty = -50
     fall_dist = 0.24
     vel_obs_scale = 0.2
-    success_tolerance = 0.05
+    success_tolerance = 0.4
     max_consecutive_success = 0
     av_factor = 0.1
     act_moving_average = 0.3
