@@ -94,6 +94,7 @@ elif args_cli.ml_framework.startswith("jax"):
 # ---------------------------
 # Helpers
 # ---------------------------
+
 def to_np(x):
     import numpy as np
     import torch
@@ -123,13 +124,34 @@ def l2(a):
     return float(np.linalg.norm(a))
 
 
+def maybe_from_infos(infos):
+    """Try to extract pose data from the infos returned by env.step(...).
+    Works for both dict-of-tensors and list[dict] structures.
+    """
+    if infos is None:
+        return None
+    out = {}
+    # Case A: dict of tensors (vectorized)
+    if isinstance(infos, dict):
+        for k in ("goal_quat", "cube_quat", "goal_pos", "cube_pos", "dropped", "is_success_step"):
+            if k in infos:
+                out[k] = to_np(infos[k])
+    # Case B: list of dicts per env -> stack if keys exist in first dict
+    elif isinstance(infos, (list, tuple)) and len(infos) > 0 and isinstance(infos[0], dict):
+        keys = ("goal_quat", "cube_quat", "goal_pos", "cube_pos", "dropped", "is_success_step")
+        for k in keys:
+            if all(k in d for d in infos):
+                out[k] = to_np(np.stack([d[k] for d in infos], axis=0))
+    return out if out else None
+
+
 def maybe_from_extras(env):
     try:
         ex = env.unwrapped.extras
     except Exception:
         return None
     out = {}
-    for k in ("goal_quat", "cube_quat", "goal_pos", "cube_pos", "dropped"):
+    for k in ("goal_quat", "cube_quat", "goal_pos", "cube_pos", "dropped", "is_success_step"):
         if k in ex:
             out[k] = to_np(ex[k])
     return out if out else None
@@ -203,7 +225,7 @@ def make_log_dir_and_csv(log_dir):
             "final_pos_err_cm",
             "success",
             "time_to_success_steps",
-            "dropped",
+            "dropped"
         ])
     return csv_path
 
@@ -253,10 +275,19 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, expe
 
     log_root_path = os.path.join("logs", "skrl", experiment_cfg["agent"]["experiment"]["directory"])
     log_root_path = os.path.abspath(log_root_path)
+    
+    # Pre-trained checkpoint logic
     if args_cli.use_pretrained_checkpoint:
-        resume_path = get_published_pretrained_checkpoint("skrl", train_task_name)
-        if not resume_path:
-            print("[INFO] No pre-trained checkpoint available for this task.")
+        try:
+            # Note: This function is not available in the provided code, but is used in the original Isaac Lab.
+            # Assuming it's a utility that gets the path to a published checkpoint.
+            from isaaclab_tasks.utils import get_published_pretrained_checkpoint
+            resume_path = get_published_pretrained_checkpoint("skrl", train_task_name)
+            if not resume_path:
+                print("[INFO] No pre-trained checkpoint available for this task.")
+                return
+        except ImportError:
+            print("[WARN] Could not import 'get_published_pretrained_checkpoint'. Skipping pre-trained checkpoint.")
             return
     elif args_cli.checkpoint:
         resume_path = os.path.abspath(args_cli.checkpoint)
@@ -315,6 +346,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, expe
     timestep = 0
 
     print("[INFO] Starting evaluation...")
+    warned_missing_metrics = False
     while simulation_app.is_running() and finished_episodes < total_eps_target:
         t0 = time.time()
         with torch.inference_mode():
@@ -326,13 +358,21 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, expe
         episode_returns += r_np
         episode_lengths += 1
 
-        batch = maybe_from_extras(env) or maybe_from_getters(env) or {}
+        batch = maybe_from_infos(infos) or maybe_from_extras(env) or maybe_from_getters(env) or {}
         metrics = compute_metrics(batch, rot_tol_deg, pos_tol_m)
 
         if "is_success" in metrics:
             succ = metrics["is_success"].astype(bool)
             newly = (first_success_step < 0) & succ
             first_success_step[newly] = episode_lengths[newly]
+        else:
+            if not warned_missing_metrics:
+                print(
+                "[WARN] No pose data found in infos/extras/getters; final_rot_err_deg will be NaN. "
+                "Add per-step in your env: extras['goal_quat'], extras['cube_quat'], "
+                "extras['goal_pos'], extras['cube_pos'] (torch tensors ok)."
+                )
+                warned_missing_metrics = True
 
         term_np = to_np(terminated)
         trunc_np = to_np(truncated)
