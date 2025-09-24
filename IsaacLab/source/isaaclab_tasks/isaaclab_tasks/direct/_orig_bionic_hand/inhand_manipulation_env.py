@@ -222,7 +222,7 @@ class InHandManipulationEnv(DirectRLEnv):
 
         # reset object
         object_default_state = self.object.data.default_root_state.clone()[env_ids]
-        pos_noise = sample_uniform(-1.0, 1.0, (len(env_ids), 3), device=self.device)
+        pos_noise = sample_uniform(-0.5, 0.5, (len(env_ids), 3), device=self.device)
         # global object positions
         object_default_state[:, 0:3] = (
             object_default_state[:, 0:3] + self.cfg.reset_position_noise * pos_noise + self.scene.env_origins[env_ids]
