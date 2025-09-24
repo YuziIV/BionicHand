@@ -1,87 +1,63 @@
-# This script visualizes key metrics from an RL evaluation CSV file
-# and saves the generated plots as an image file.
+import os, pandas as pd, numpy as np, matplotlib.pyplot as plt
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import os
+RUNS = {
+    "logs/.../ShadowHand/evaluation.csv": "Shadow Hand",
+    "logs/.../BionicHand-std/evaluation.csv": "Bionic Hand (std)",
+    "logs/.../BionicHand+Wrist/evaluation.csv": "Bionic + Wrist",
+    "logs/.../BionicHand-ROMx/evaluation.csv": "Bionic (ROM↑)",
+}
 
-# --- Configuration ---
-# Set the full path to your CSV file
-csv_file_path = "/workspace/isaaclab/logs/skrl/bionic_hand/2025-09-23_01-50-23_ppo_torch/evaluation.csv"
+dfs = []
+for path, label in RUNS.items():
+    df = pd.read_csv(path)
+    df["config"] = label
+    dfs.append(df)
+data = pd.concat(dfs, ignore_index=True)
 
-# Get the directory of the CSV file to save the plot image in the same location
-output_dir = os.path.dirname(csv_file_path)
-output_path = os.path.join(output_dir, 'evaluation_plots.png')
+def med_iqr(x):
+    return f"{np.nanmedian(x):.2f} [{np.nanpercentile(x,25):.2f}, {np.nanpercentile(x,75):.2f}]"
 
-# --- Data Loading and Pre-processing ---
-try:
-    # Read the data from the CSV file into a pandas DataFrame.
-    df = pd.read_csv(csv_file_path)
-    # Filter for successful episodes to plot errors.
-    successful_episodes = df[df['success'] == 1]
-except FileNotFoundError:
-    print(f"Error: The file '{csv_file_path}' was not found.")
-    exit()
-except pd.errors.EmptyDataError:
-    print(f"Error: The file '{csv_file_path}' is empty.")
-    exit()
-except Exception as e:
-    print(f"An unexpected error occurred: {e}")
-    exit()
+# ----- summary table -----
+summary = data.groupby("config").apply(lambda g: pd.Series({
+    "Success (%)": 100.0 * g["success"].mean(),
+    "Final err (°) med[IQR]": med_iqr(g["final_rot_err_deg"]),
+    "Min err (°) med[IQR]": med_iqr(g["min_rot_err_deg"]),
+    "Drop rate (%)": 100.0 * g["dropped"].mean(),
+    "TTS (steps) med[IQR] (succ only)": med_iqr(g.loc[g["success"]==1, "time_to_success_steps"]),
+    "n_episodes": len(g),
+}))
+print(summary.to_string())
 
-# --- Plotting ---
-# Create a figure and a set of subplots.
-# The layout is 2 rows by 2 columns.
-fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-fig.suptitle('RL Agent Performance Evaluation', fontsize=20, y=1.02)
-plt.style.use('seaborn-v0_8-whitegrid')
+# ----- Success rate bar -----
+plt.figure()
+suc = data.groupby("config")["success"].mean().sort_values()
+(suc * 100).plot(kind="bar")
+plt.ylabel("Success (%)")
+plt.title("Success rate (env success_tolerance=0.4)")
+plt.tight_layout()
+plt.show()
 
-# Plot 1: Episode Return vs. Episode Number
-ax1 = axes[0, 0]
-ax1.scatter(df['episode'], df['return'], alpha=0.6, s=15, color='royalblue')
-ax1.set_title('Episode Return vs. Episode Number', fontsize=14)
-ax1.set_xlabel('Episode')
-ax1.set_ylabel('Total Return')
+# ----- ECDF of min rotation error -----
+plt.figure()
+for cfg, g in data.groupby("config"):
+    x = np.sort(g["min_rot_err_deg"].values)
+    y = np.linspace(0, 1, len(x), endpoint=True)
+    plt.plot(x, y, label=cfg)
+plt.xlabel("Minimum orientation error within episode (deg)")
+plt.ylabel("ECDF")
+plt.legend()
+plt.tight_layout()
+plt.show()
 
-# Plot 2: Success Rate (Moving Average)
-ax2 = axes[0, 1]
-# Calculate a rolling average of the success rate over a window of 25 episodes
-rolling_success_rate = df['success'].rolling(window=25, min_periods=1).mean()
-ax2.plot(df['episode'], rolling_success_rate, color='seagreen', linewidth=2)
-ax2.set_title('Success Rate (25-Episode Rolling Average)', fontsize=14)
-ax2.set_xlabel('Episode')
-ax2.set_ylabel('Success Rate')
-ax2.set_ylim(-0.05, 1.05)
+# ----- Final rotation error distribution -----
+plt.figure()
+order = data["config"].unique()
+data.boxplot(column="final_rot_err_deg", by="config", grid=False)
+plt.suptitle("")
+plt.xlabel("")
+plt.ylabel("Final orientation error (deg)")
+plt.tight_layout()
+plt.show()
 
-# Plot 3: Distribution of Final Rotation Error for Successful Episodes
-ax3 = axes[1, 0]
-if not successful_episodes.empty:
-    ax3.hist(successful_episodes['final_rot_err_deg'], bins=20, color='indianred', edgecolor='black')
-    ax3.set_title('Final Rotation Error for Successful Episodes', fontsize=14)
-    ax3.set_xlabel('Final Rotation Error (degrees)')
-    ax3.set_ylabel('Frequency')
-else:
-    ax3.text(0.5, 0.5, 'No successful episodes to plot.', ha='center', va='center', fontsize=12)
-    ax3.set_title('Final Rotation Error for Successful Episodes', fontsize=14)
-
-# Plot 4: Distribution of Final Position Error for Successful Episodes
-ax4 = axes[1, 1]
-if not successful_episodes.empty:
-    ax4.hist(successful_episodes['final_pos_err_cm'], bins=20, color='darkorange', edgecolor='black')
-    ax4.set_title('Final Position Error for Successful Episodes', fontsize=14)
-    ax4.set_xlabel('Final Position Error (cm)')
-    ax4.set_ylabel('Frequency')
-else:
-    ax4.text(0.5, 0.5, 'No successful episodes to plot.', ha='center', va='center', fontsize=12)
-    ax4.set_title('Final Position Error for Successful Episodes', fontsize=14)
-
-# Adjust layout to prevent titles and labels from overlapping.
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-
-# Save the figure to a file.
-plt.savefig(output_path, dpi=300)
-
-print(f"Plots generated successfully and saved to '{output_path}'.")
-
-# Close the plot figure to free up resources.
-plt.close(fig)
+# ----- Optional: simple KM-style survival (success as event) -----
+# Requires per-episode lengths and censoring; skip here if not logged cleanly.

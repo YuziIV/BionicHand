@@ -21,12 +21,13 @@ from isaaclab.utils.math import quat_conjugate, quat_from_angle_axis, quat_mul, 
 if TYPE_CHECKING:
     from isaaclab_tasks.direct.allegro_hand.allegro_hand_env_cfg import AllegroHandEnvCfg
     from isaaclab_tasks.direct.shadow_hand.shadow_hand_env_cfg import ShadowHandEnvCfg
+    from isaaclab_tasks.direct._orig_bionic_hand.org_bionic_hand_env_cfg import BionicHandEnvCfg
 
 
 class InHandManipulationEnv(DirectRLEnv):
-    cfg: AllegroHandEnvCfg | ShadowHandEnvCfg
+    cfg: AllegroHandEnvCfg | ShadowHandEnvCfg | BionicHandEnvCfg
 
-    def __init__(self, cfg: AllegroHandEnvCfg | ShadowHandEnvCfg, render_mode: str | None = None, **kwargs):
+    def __init__(self, cfg: AllegroHandEnvCfg | ShadowHandEnvCfg | BionicHandEnvCfg, render_mode: str | None = None, **kwargs):
         super().__init__(cfg, render_mode, **kwargs)
 
         self.num_hand_dofs = self.hand.num_joints

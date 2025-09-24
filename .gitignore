@@ -1,5 +1,5 @@
 # Ignore only these specific files
 IsaacLab/docker/.container.cfg
 IsaacLab/docker/.isaac-lab-docker-history
-IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/_orig_bionic_hand/__pycache__/org_bionic_hand_env_cfg.cpython-311.pyc
+IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/_orig_bionic_hand/__pycache__/
 
