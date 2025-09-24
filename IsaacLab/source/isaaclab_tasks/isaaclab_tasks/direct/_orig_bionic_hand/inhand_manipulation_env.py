@@ -21,13 +21,12 @@ from isaaclab.utils.math import quat_conjugate, quat_from_angle_axis, quat_mul, 
 if TYPE_CHECKING:
     from isaaclab_tasks.direct.allegro_hand.allegro_hand_env_cfg import AllegroHandEnvCfg
     from isaaclab_tasks.direct.shadow_hand.shadow_hand_env_cfg import ShadowHandEnvCfg
-    from isaaclab_tasks.direct._orig_bionic_hand.org_bionic_hand_env_cfg import BionicHandEnvCfg
 
 
 class InHandManipulationEnv(DirectRLEnv):
-    cfg: AllegroHandEnvCfg | ShadowHandEnvCfg | BionicHandEnvCfg
+    cfg: AllegroHandEnvCfg | ShadowHandEnvCfg
 
-    def __init__(self, cfg: AllegroHandEnvCfg | ShadowHandEnvCfg | BionicHandEnvCfg, render_mode: str | None = None, **kwargs):
+    def __init__(self, cfg: AllegroHandEnvCfg | ShadowHandEnvCfg, render_mode: str | None = None, **kwargs):
         super().__init__(cfg, render_mode, **kwargs)
 
         self.num_hand_dofs = self.hand.num_joints
@@ -42,7 +41,9 @@ class InHandManipulationEnv(DirectRLEnv):
         for joint_name in cfg.actuated_joint_names:
             self.actuated_dof_indices.append(self.hand.joint_names.index(joint_name))
         self.actuated_dof_indices.sort()
-
+        # actions
+        self.actions = torch.zeros((self.num_envs, len(self.actuated_dof_indices)),
+                           dtype=torch.float, device=self.device)
         # finger bodies
         self.finger_bodies = list()
         for body_name in self.cfg.fingertip_body_names:
@@ -128,15 +129,33 @@ class InHandManipulationEnv(DirectRLEnv):
         elif self.cfg.obs_type == "full":
             obs = self.compute_full_observations()
         else:
-            print("Unknown observations type!")
+            raise RuntimeError(f"Unknown observations type: {self.cfg.obs_type}")
 
         if self.cfg.asymmetric_obs:
             states = self.compute_full_state()
 
+        # ---- NEW: conform to registered observation_space (skrl wrapper expects fixed dim) ----
+        try:
+            expected = self.observation_space["policy"].shape[0]
+        except Exception:
+            expected = obs.shape[-1]
+
+        if obs.shape[-1] > expected:
+            obs = obs[:, :expected]
+        elif obs.shape[-1] < expected:
+            pad = torch.zeros((self.num_envs, expected - obs.shape[-1]), device=self.device, dtype=obs.dtype)
+            obs = torch.cat([obs, pad], dim=-1)
+
+        if not getattr(self, "_printed_obs_once", False):
+            print(f"[Env] policy obs_dim={obs.shape[-1]} (expected {expected})")
+            self._printed_obs_once = True
+        # ----------------------------------------------------------------------------------------
+
         observations = {"policy": obs}
         if self.cfg.asymmetric_obs:
-            observations = {"policy": obs, "critic": states}
+            observations["critic"] = states
         return observations
+
 
     def _get_rewards(self) -> torch.Tensor:
         (
@@ -166,6 +185,9 @@ class InHandManipulationEnv(DirectRLEnv):
             self.cfg.av_factor,
         )
 
+        self.extras["is_success_step"] = self.reset_goal_buf.to(torch.int32)
+        self.extras["num_goal_hits"] = self.successes.to(torch.int32)
+        
         if "log" not in self.extras:
             self.extras["log"] = dict()
         self.extras["log"]["consecutive_successes"] = self.consecutive_successes.mean()
@@ -269,11 +291,15 @@ class InHandManipulationEnv(DirectRLEnv):
         self.object_linvel = self.object.data.root_lin_vel_w
         self.object_angvel = self.object.data.root_ang_vel_w
 
-        # New: comprehensive logging values
-        self.extras["goal_quat"] = self.goal_rot            # target orientation
-        self.extras["cube_quat"] = self.object_rot          # object orientation
-        self.extras["goal_pos"]  = self.goal_pos            # local goal position (no env origin added)
-        self.extras["cube_pos"]  = self.object_pos          # local object position
+        # New: dynamic palm center (env frame)
+        palm_center_env = self.fingertip_pos.mean(dim=1)  # (E,3)
+        self.in_hand_pos = palm_center_env
+
+        # Publish for evaluator / logging
+        self.extras["goal_quat"] = self.goal_rot            # target orientation (world)
+        self.extras["cube_quat"] = self.object_rot          # object orientation (world)
+        self.extras["goal_pos"]  = self.in_hand_pos         # "desired" object position = palm center (env)
+        self.extras["cube_pos"]  = self.object_pos          # object position (env)
 
     def compute_reduced_observations(self):
         # Per https://arxiv.org/pdf/1808.00177.pdf Table 2
