@@ -21,12 +21,13 @@ from isaaclab.utils.math import quat_conjugate, quat_from_angle_axis, quat_mul, 
 if TYPE_CHECKING:
     from isaaclab_tasks.direct.allegro_hand.allegro_hand_env_cfg import AllegroHandEnvCfg
     from isaaclab_tasks.direct.shadow_hand.shadow_hand_env_cfg import ShadowHandEnvCfg
+    from isaaclab_tasks.direct._orig_bionic_hand.org_bionic_hand_env_cfg import BionicHandEnvCfg
 
 
 class InHandManipulationEnv(DirectRLEnv):
-    cfg: AllegroHandEnvCfg | ShadowHandEnvCfg
+    cfg: AllegroHandEnvCfg | ShadowHandEnvCfg | BionicHandEnvCfg
 
-    def __init__(self, cfg: AllegroHandEnvCfg | ShadowHandEnvCfg, render_mode: str | None = None, **kwargs):
+    def __init__(self, cfg: AllegroHandEnvCfg | ShadowHandEnvCfg | BionicHandEnvCfg, render_mode: str | None = None, **kwargs):
         super().__init__(cfg, render_mode, **kwargs)
 
         self.num_hand_dofs = self.hand.num_joints
@@ -41,9 +42,12 @@ class InHandManipulationEnv(DirectRLEnv):
         for joint_name in cfg.actuated_joint_names:
             self.actuated_dof_indices.append(self.hand.joint_names.index(joint_name))
         self.actuated_dof_indices.sort()
+        
+        # Logging
         # actions
         self.actions = torch.zeros((self.num_envs, len(self.actuated_dof_indices)),
                            dtype=torch.float, device=self.device)
+        
         # finger bodies
         self.finger_bodies = list()
         for body_name in self.cfg.fingertip_body_names:
@@ -129,33 +133,15 @@ class InHandManipulationEnv(DirectRLEnv):
         elif self.cfg.obs_type == "full":
             obs = self.compute_full_observations()
         else:
-            raise RuntimeError(f"Unknown observations type: {self.cfg.obs_type}")
+            print("Unknown observations type!")
 
         if self.cfg.asymmetric_obs:
             states = self.compute_full_state()
 
-        # ---- NEW: conform to registered observation_space (skrl wrapper expects fixed dim) ----
-        try:
-            expected = self.observation_space["policy"].shape[0]
-        except Exception:
-            expected = obs.shape[-1]
-
-        if obs.shape[-1] > expected:
-            obs = obs[:, :expected]
-        elif obs.shape[-1] < expected:
-            pad = torch.zeros((self.num_envs, expected - obs.shape[-1]), device=self.device, dtype=obs.dtype)
-            obs = torch.cat([obs, pad], dim=-1)
-
-        if not getattr(self, "_printed_obs_once", False):
-            print(f"[Env] policy obs_dim={obs.shape[-1]} (expected {expected})")
-            self._printed_obs_once = True
-        # ----------------------------------------------------------------------------------------
-
         observations = {"policy": obs}
         if self.cfg.asymmetric_obs:
-            observations["critic"] = states
+            observations = {"policy": obs, "critic": states}
         return observations
-
 
     def _get_rewards(self) -> torch.Tensor:
         (
@@ -184,7 +170,8 @@ class InHandManipulationEnv(DirectRLEnv):
             self.cfg.fall_penalty,
             self.cfg.av_factor,
         )
-
+        
+        # logging
         self.extras["is_success_step"] = self.reset_goal_buf.to(torch.int32)
         self.extras["num_goal_hits"] = self.successes.to(torch.int32)
         
@@ -205,10 +192,23 @@ class InHandManipulationEnv(DirectRLEnv):
         # reset when cube has fallen
         goal_dist = torch.norm(self.object_pos - self.in_hand_pos, p=2, dim=-1)
         out_of_reach = goal_dist >= self.cfg.fall_dist
+
+        # logging
         self.extras["dropped"] = out_of_reach.int()
         
-        time_out = self.episode_length_buf >= self.max_episode_length - 1
+        if self.cfg.max_consecutive_success > 0:
+            # Reset progress (episode length buf) on goal envs if max_consecutive_success > 0
+            rot_dist = rotation_distance(self.object_rot, self.goal_rot)
+            self.episode_length_buf = torch.where(
+                torch.abs(rot_dist) <= self.cfg.success_tolerance,
+                torch.zeros_like(self.episode_length_buf),
+                self.episode_length_buf,
+            )
+            max_success_reached = self.successes >= self.cfg.max_consecutive_success
 
+        time_out = self.episode_length_buf >= self.max_episode_length - 1
+        if self.cfg.max_consecutive_success > 0:
+            time_out = time_out | max_success_reached
         return out_of_reach, time_out
 
     def _reset_idx(self, env_ids: Sequence[int] | None):
@@ -222,7 +222,7 @@ class InHandManipulationEnv(DirectRLEnv):
 
         # reset object
         object_default_state = self.object.data.default_root_state.clone()[env_ids]
-        pos_noise = sample_uniform(-0.5, 0.5, (len(env_ids), 3), device=self.device)
+        pos_noise = sample_uniform(-1.0, 1.0, (len(env_ids), 3), device=self.device)
         # global object positions
         object_default_state[:, 0:3] = (
             object_default_state[:, 0:3] + self.cfg.reset_position_noise * pos_noise + self.scene.env_origins[env_ids]
@@ -291,11 +291,13 @@ class InHandManipulationEnv(DirectRLEnv):
         self.object_linvel = self.object.data.root_lin_vel_w
         self.object_angvel = self.object.data.root_ang_vel_w
 
-        # New: dynamic palm center (env frame)
+        # Logging
+        # dynamic palm center (env frame)
         palm_center_env = self.fingertip_pos.mean(dim=1)  # (E,3)
         self.in_hand_pos = palm_center_env
 
-        # Publish for evaluator / logging
+        # Logging
+        # Publish for evaluator
         self.extras["goal_quat"] = self.goal_rot            # target orientation (world)
         self.extras["cube_quat"] = self.object_rot          # object orientation (world)
         self.extras["goal_pos"]  = self.in_hand_pos         # "desired" object position = palm center (env)

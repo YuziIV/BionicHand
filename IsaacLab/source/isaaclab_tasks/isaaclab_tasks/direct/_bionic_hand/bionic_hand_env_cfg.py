@@ -30,96 +30,84 @@ urdf_path = "/workspace/isaaclab/source/isaaclab_tasks/isaaclab_tasks/direct/bio
 #8axis config
 usd_path = "/workspace/isaaclab/source/isaaclab_tasks/isaaclab_tasks/direct/_bionic_hand/assets/usd/AZARM.SLDASM/AZARM.SLDASM.usd"
 
-# @configclass
-# class EventCfg:
-#     """Configuration for randomization."""
+@configclass
+class EventCfg:
+    """Configuration for randomization."""
 
-#     # -- robot
-#     robot_physics_material = EventTerm(
-#         func=mdp.randomize_rigid_body_material,
-#         mode="reset",
-#         min_step_count_between_reset=720,
-#         params={
-#             "asset_cfg": SceneEntityCfg("robot"),
-#             "static_friction_range": (0.7, 1.3),
-#             "dynamic_friction_range": (1.0, 1.0),
-#             "restitution_range": (1.0, 1.0),
-#             "num_buckets": 250,
-#         },
-#     )
-#     robot_joint_stiffness_and_damping = EventTerm(
-#         func=mdp.randomize_actuator_gains,
-#         min_step_count_between_reset=720,
-#         mode="reset",
-#         params={
-#             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-#             "stiffness_distribution_params": (0.75, 1.5),
-#             "damping_distribution_params": (0.3, 3.0),
-#             "operation": "scale",
-#             "distribution": "log_uniform",
-#         },
-#     )
-#     robot_joint_pos_limits = EventTerm(
-#         func=mdp.randomize_joint_parameters,
-#         min_step_count_between_reset=720,
-#         mode="reset",
-#         params={
-#             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-#             "lower_limit_distribution_params": (0.00, 0.01),
-#             "upper_limit_distribution_params": (0.00, 0.01),
-#             "operation": "add",
-#             "distribution": "gaussian",
-#         },
-#     )
-#     #robot_tendon_properties = EventTerm(
-#     #    func=mdp.randomize_fixed_tendon_parameters,
-#     #    min_step_count_between_reset=720,
-#     #    mode="reset",
-#     #    params={
-#     #        "asset_cfg": SceneEntityCfg("robot", fixed_tendon_names=".*"),
-#     #        "stiffness_distribution_params": (0.75, 1.5),
-#     #        "damping_distribution_params": (0.3, 3.0),
-#     #        "operation": "scale",
-#     #        "distribution": "log_uniform",
-#     #    },
-#     #)
-#     # -- object
-#     object_physics_material = EventTerm(
-#         func=mdp.randomize_rigid_body_material,
-#         min_step_count_between_reset=720,
-#         mode="reset",
-#         params={
-#             "asset_cfg": SceneEntityCfg("object"),
-#             "static_friction_range": (0.7, 1.3),
-#             "dynamic_friction_range": (1.0, 1.0),
-#             "restitution_range": (1.0, 1.0),
-#             "num_buckets": 250,
-#         },
-#     )
-#     object_scale_mass = EventTerm(
-#         func=mdp.randomize_rigid_body_mass,
-#         min_step_count_between_reset=720,
-#         mode="reset",
-#         params={
-#             "asset_cfg": SceneEntityCfg("object"),
-#             "mass_distribution_params": (0.5, 1.5),
-#             "operation": "scale",
-#             "distribution": "uniform",
-#         },
-#     )
+    # -- robot
+    robot_physics_material = EventTerm(
+        func=mdp.randomize_rigid_body_material,
+        mode="reset",
+        min_step_count_between_reset=720,
+        params={
+            "asset_cfg": SceneEntityCfg("robot"),
+            "static_friction_range": (0.7, 1.3),
+            "dynamic_friction_range": (1.0, 1.0),
+            "restitution_range": (1.0, 1.0),
+            "num_buckets": 250,
+        },
+    )
+    robot_joint_stiffness_and_damping = EventTerm(
+        func=mdp.randomize_actuator_gains,
+        min_step_count_between_reset=720,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
+            "stiffness_distribution_params": (0.75, 1.5),
+            "damping_distribution_params": (0.3, 3.0),
+            "operation": "scale",
+            "distribution": "log_uniform",
+        },
+    )
+    robot_joint_pos_limits = EventTerm(
+        func=mdp.randomize_joint_parameters,
+        min_step_count_between_reset=720,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
+            "lower_limit_distribution_params": (0.00, 0.01),
+            "upper_limit_distribution_params": (0.00, 0.01),
+            "operation": "add",
+            "distribution": "gaussian",
+        },
+    )
 
-#     # -- scene
-#     reset_gravity = EventTerm(
-#         func=mdp.randomize_physics_scene_gravity,
-#         mode="interval",
-#         is_global_time=True,
-#         interval_range_s=(36.0, 36.0),  # time_s = num_steps * (decimation * dt)
-#         params={
-#             "gravity_distribution_params": ([0.0, 0.0, 0.0], [0.0, 0.0, 0.4]),
-#             "operation": "add",
-#             "distribution": "gaussian",
-#         },
-#     )
+    object_physics_material = EventTerm(
+        func=mdp.randomize_rigid_body_material,
+        min_step_count_between_reset=720,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("object"),
+            "static_friction_range": (0.7, 1.3),
+            "dynamic_friction_range": (1.0, 1.0),
+            "restitution_range": (1.0, 1.0),
+            "num_buckets": 250,
+        },
+    )
+    object_scale_mass = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        min_step_count_between_reset=720,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("object"),
+            "mass_distribution_params": (0.5, 1.5),
+            "operation": "scale",
+            "distribution": "uniform",
+        },
+    )
+
+    # -- scene
+    reset_gravity = EventTerm(
+        func=mdp.randomize_physics_scene_gravity,
+        mode="interval",
+        is_global_time=True,
+        interval_range_s=(36.0, 36.0),  # time_s = num_steps * (decimation * dt)
+        params={
+            "gravity_distribution_params": ([0.0, 0.0, 0.0], [0.0, 0.0, 0.4]),
+            "operation": "add",
+            "distribution": "gaussian",
+        },
+    )
  
 @configclass
 class BionicHandEnvCfg(DirectRLEnvCfg):
@@ -297,6 +285,7 @@ class BionicHandEnvCfg(DirectRLEnvCfg):
     # scene
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=8192, env_spacing=0.75, replicate_physics=True)
 
+
     # reset
     reset_position_noise = 0.01  # range of position at reset
     reset_dof_pos_noise = 0.2  # range of dof pos at reset
@@ -305,13 +294,13 @@ class BionicHandEnvCfg(DirectRLEnvCfg):
     dist_reward_scale = -10.0
     rot_reward_scale = 1.0
     rot_eps = 0.1
-    action_penalty_scale = -0.0002
+    action_penalty_scale = -0.001
     reach_goal_bonus = 250
-    fall_penalty = 0
+    fall_penalty = -50
     fall_dist = 0.24
     vel_obs_scale = 0.2
-    success_tolerance = 0.1
+    success_tolerance = 0.4
     max_consecutive_success = 0
     av_factor = 0.1
-    act_moving_average = 1.0
+    act_moving_average = 0.3
     force_torque_obs_scale = 10.0
