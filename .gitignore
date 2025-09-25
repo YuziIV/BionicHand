@@ -2,4 +2,6 @@
 IsaacLab/docker/.container.cfg
 IsaacLab/docker/.isaac-lab-docker-history
 IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/_orig_bionic_hand/__pycache__/
-
+# Python-specific ignore rules
+__pycache__/
+*.pyc
